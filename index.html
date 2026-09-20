@@ -23,7 +23,7 @@
   }
 
   .stopky {
-    background: #c0682d;
+    background: #ff69b4;
     border-radius: 24px;
     padding: 28px;
     width: 360px;
@@ -32,7 +32,7 @@
   }
 
   .displej {
-    background: #0cc22a;
+    background: #000000;
     border-radius: 14px;
     padding: 28px 16px;
     text-align: center;
@@ -42,21 +42,33 @@
 
   .cas {
     color: #ffffff;
-    font-size: 2.6rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 1px;
     font-weight: 600;
-    word-break: break-word;
   }
 
-  .cas .stotiny {
-    font-size: 1.6rem;
-    color: #cfd8ff;
+  .hodnota-casu {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cislo {
+    font-size: 2rem;
+  }
+
+  .popis {
+    color: #ffb6d9;
+    font-size: 0.7rem;
+    font-weight: 400;
+    text-transform: uppercase;
   }
 
   .tlacidla {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
 
@@ -76,8 +88,8 @@
   button:active { transform: scale(0.96); }
 
   @media (max-width: 400px) {
-    .cas { font-size: 2rem; }
-    .cas .stotiny { font-size: 1.2rem; }
+    .cislo { font-size: 1.5rem; }
+    .popis { font-size: 0.58rem; }
   }
 </style>
 </head>
@@ -85,11 +97,10 @@
 
 <div class="stopky">
   <div class="displej">
-    <div class="cas" id="cas">00:00:00<span class="stotiny">.00</span></div>
+    <div class="cas" id="cas"></div>
   </div>
   <div class="tlacidla">
     <button id="btnStart">Zapnúť</button>
-    <button id="btnStop">Stop</button>
     <button id="btnReset">Reset</button>
   </div>
 </div>
@@ -112,15 +123,22 @@
     const pad = (n) => String(n).padStart(2, '0');
 
     return {
-      hlavny: `${pad(hodiny)}:${pad(minuty)}:${pad(sekundy)}`,
+      hodiny: pad(hodiny),
+      minuty: pad(minuty),
+      sekundy: pad(sekundy),
       stotiny: pad(stotiny)
     };
   }
 
   function vykresli() {
     const celkovy = running ? (elapsed + (Date.now() - startTime)) : elapsed;
-    const { hlavny, stotiny } = formatuj(celkovy);
-    casEl.innerHTML = `${hlavny}<span class="stotiny">.${stotiny}</span>`;
+    const { hodiny, minuty, sekundy, stotiny } = formatuj(celkovy);
+    casEl.innerHTML = `
+      <div class="hodnota-casu"><span class="cislo">${hodiny}</span><span class="popis">hodiny</span></div>
+      <div class="hodnota-casu"><span class="cislo">${minuty}</span><span class="popis">minúty</span></div>
+      <div class="hodnota-casu"><span class="cislo">${sekundy}</span><span class="popis">sekundy</span></div>
+      <div class="hodnota-casu"><span class="cislo">${stotiny}</span><span class="popis">stotiny</span></div>
+    `;
   }
 
   function tick() {
@@ -128,19 +146,22 @@
     timerId = requestAnimationFrame(tick);
   }
 
-  document.getElementById('btnStart').addEventListener('click', () => {
-    if (running) return;
-    running = true;
-    startTime = Date.now();
-    tick();
-  });
+  const btnStartStop = document.getElementById('btnStart');
+  btnStartStop.textContent = 'Štart';
 
-  document.getElementById('btnStop').addEventListener('click', () => {
-    if (!running) return;
-    running = false;
-    elapsed += Date.now() - startTime;
-    cancelAnimationFrame(timerId);
-    vykresli();
+  btnStartStop.addEventListener('click', () => {
+    if (running) {
+      running = false;
+      elapsed += Date.now() - startTime;
+      cancelAnimationFrame(timerId);
+      btnStartStop.textContent = 'Štart';
+      vykresli();
+    } else {
+      running = true;
+      startTime = Date.now();
+      btnStartStop.textContent = 'Stop';
+      tick();
+    }
   });
 
   document.getElementById('btnReset').addEventListener('click', () => {
@@ -148,6 +169,7 @@
     cancelAnimationFrame(timerId);
     elapsed = 0;
     startTime = 0;
+    btnStartStop.textContent = 'Štart';
     vykresli();
   });
 
